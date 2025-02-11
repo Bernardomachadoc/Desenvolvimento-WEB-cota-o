@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Conversão de Moedas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        select, input[type="number"], button {
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #fff url('https://img.icons8.com/ios/50/000000/expand-arrow.png') no-repeat right center;
+            background-size: 20px;
+            padding-right: 30px;
+        }
+        .currency-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .currency-container img {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .tax-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Conversão de Moedas</h1>
+        <div>
+            <label for="from_currency">De:</label>
+            <div class="currency-container">
+                <img id="from_currency_icon" src="" alt="Icone Moeda">
+                <select id="from_currency">
+                    <!-- As opções de moedas serão carregadas aqui -->
+                </select>
+            </div>
+        </div>
+        <div>
+            <label for="from_amount">Valor:</label>
+            <input type="number" id="from_amount" value="1" min="0.01" step="0.01">
+        </div>
+        <div>
+            <label for="to_currency">Para:</label>
+            <div class="currency-container">
+                <img id="to_currency_icon" src="" alt="Icone Moeda">
+                <select id="to_currency">
+                    <!-- As opções de moedas serão carregadas aqui -->
+                </select>
+            </div>
+        </div>
+        <button id="convert_btn">Converter</button>
+        <div id="tax_info" class="tax-info"></div>
+        <div id="conversion_result" class="result"></div>
+    </div>
+
+    <script>
+        const apiKey = 'YOUR_API_KEY'; // Substitua com a chave da sua API de câmbio
+
+        const moedas = ['USD', 'BRL', 'EUR', 'GBP', 'JPY', 'CAD']; // Lista de moedas
+        const moedaIcons = {
+            'USD': 'https://img.icons8.com/ios/50/000000/usa.png',
+            'BRL': 'https://img.icons8.com/ios/50/000000/brazil.png',
+            'EUR': 'https://img.icons8.com/ios/50/000000/european-union.png',
+            'GBP': 'https://img.icons8.com/ios/50/000000/uk.png',
+            'JPY': 'https://img.icons8.com/ios/50/000000/japan.png',
+            'CAD': 'https://img.icons8.com/ios/50/000000/canada.png',
+        };
+
+        const fromCurrencySelect = document.getElementById('from_currency');
+        const toCurrencySelect = document.getElementById('to_currency');
+        const fromCurrencyIcon = document.getElementById('from_currency_icon');
+        const toCurrencyIcon = document.getElementById('to_currency_icon');
+
+        // Função para preencher as opções de moedas e ícones
+        function populateCurrencyOptions() {
+            moedas.forEach(currency => {
+                const optionFrom = document.createElement('option');
+                optionFrom.value = currency;
+                optionFrom.textContent = currency;
+                fromCurrencySelect.appendChild(optionFrom);
+
+                const optionTo = document.createElement('option');
+                optionTo.value = currency;
+                optionTo.textContent = currency;
+                toCurrencySelect.appendChild(optionTo);
+            });
+
+            // Definir ícones iniciais
+            fromCurrencyIcon.src = moedaIcons['USD'];
+            toCurrencyIcon.src = moedaIcons['BRL'];
+        }
+
+        // Função para obter a taxa de câmbio
+        async function getExchangeRate(from, to) {
+            const url = `https://api.exchangerate-api.com/v4/latest/${from}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.rates[to];
+            } catch (error) {
+                console.error('Erro ao buscar taxas de câmbio:', error);
+                alert('Erro ao buscar taxas de câmbio. Tente novamente mais tarde.');
+            }
+        }
+
+        // Função para realizar a conversão
+        async function convertCurrency() {
+            const fromCurrency = fromCurrencySelect.value;
+            const toCurrency = toCurrencySelect.value;
+            const amount = parseFloat(document.getElementById('from_amount').value);
+
+            if (!fromCurrency || !toCurrency || amount <= 0) {
+                alert('Por favor, insira valores válidos para a conversão.');
+                return;
+            }
+
+            const rate = await getExchangeRate(fromCurrency, toCurrency);
+            const result = amount * rate;
+
+            const taxInfo = `${amount} ${fromCurrency} = ${result.toFixed(2)} ${toCurrency}`;
+            document.getElementById('tax_info').textContent = `Taxa de Câmbio: 1 ${fromCurrency} = ${rate.toFixed(2)} ${toCurrency}`;
+            document.getElementById('conversion_result').textContent = taxInfo;
+        }
+
+        // Atualiza os ícones das moedas quando o usuário mudar a moeda
+        fromCurrencySelect.addEventListener('change', () => {
+            fromCurrencyIcon.src = moedaIcons[fromCurrencySelect.value];
+        });
+
+        toCurrencySelect.addEventListener('change', () => {
+            toCurrencyIcon.src = moedaIcons[toCurrencySelect.value];
+        });
+
+        // Evento de conversão
+        document.getElementById('convert_btn').addEventListener('click', convertCurrency);
+
+        // Inicializar o sistema
+        window.onload = function () {
+            populateCurrencyOptions(); // Preenche as opções de moedas ao carregar a página
+        };
+    </script>
+
+</body>
+</html>
